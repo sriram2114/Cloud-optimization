@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: cloudcostx-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-cloudcostx123}
+      MYSQL_DATABASE: ${DB_NAME:-cloudcostx}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: cloudcostx-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-cloudcostx}
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-cloudcostx123}
+      JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLXNlY3JldC1rZXktZm9yLWNsb3VkY29zdHgtcGxhdGZvcm0tMjAyNi1maW5vcHM=}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:
